@@ -30,3 +30,12 @@ func TestHashUnicity(t *testing.T) {
 		t.Error("Block 1 : ", block1.ToString(), "Block 2 : ", block2.ToString(), "Got Different Hashes")
 	}
 }
+
+func TestBlockCreation(t *testing.T) {
+	block1 := Block{1, "", "timestamp", "", "Thomas", ""}
+	block2 := newBlock(block1, "Thomas", "Bill")
+
+	if !checkBlocks(block1, block2) {
+		t.Error("Block 1 : ", block1.ToString(), "Block 2 : ", block2.ToString(), "Are not well created")
+	}
+}

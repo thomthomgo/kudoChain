@@ -8,9 +8,7 @@ import (
 	"time"
 )
 
-//struct Block
-//calculate Hash
-//generateBlock (from old block)
+//TODO :
 //check Block
 //choose longer chain
 
@@ -35,9 +33,21 @@ func (block *Block) computeHash() {
 	block.hash = hex.EncodeToString(sha)
 }
 
+func checkBlocks(previousBlock, newBlock Block) bool {
+	if newBlock.previousHash != previousBlock.hash {
+		return false
+	}
+	return true
+}
+
+func newBlock(previousBlock Block, previousOwner, newOwner string) Block {
+	newBlock := Block{previousBlock.id + 1, previousBlock.hash, time.Now().String(), previousOwner, newOwner, ""}
+	newBlock.computeHash()
+	return newBlock
+}
+
 func main() {
 	genesis := Block{1, "", time.Now().String(), "", "Thomas", ""}
 	genesis.computeHash()
 	fmt.Printf(genesis.hash)
-
 }
