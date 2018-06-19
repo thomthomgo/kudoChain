@@ -5,11 +5,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
 //TODO :
-//check Block
 //choose longer chain
 
 type Block struct {
@@ -22,11 +22,12 @@ type Block struct {
 }
 
 func (block Block) ToString() string {
-	return strconv.Itoa(block.id) + block.previousHash + block.timestamp + block.previousOwner + block.newOwner
+	return strconv.Itoa(block.id) + " " + block.previousHash + " " + block.timestamp +
+		" " + block.previousOwner + " " + block.newOwner
 }
 
 func (block *Block) computeHash() {
-	hashString := block.ToString()
+	hashString := strings.Replace(block.ToString(), " ", "", -1)
 	hash := sha256.New()
 	hash.Write([]byte(hashString))
 	sha := hash.Sum(nil)
