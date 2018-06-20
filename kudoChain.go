@@ -10,7 +10,6 @@ import (
 )
 
 //TODO :
-//choose longer chain
 
 type Block struct {
 	id            int
@@ -45,6 +44,13 @@ func newBlock(previousBlock Block, previousOwner, newOwner string) Block {
 	newBlock := Block{previousBlock.id + 1, previousBlock.hash, time.Now().String(), previousOwner, newOwner, ""}
 	newBlock.computeHash()
 	return newBlock
+}
+
+func chooseLongerChain(chain1, chain2 []Block) []Block {
+	if len(chain2) > len(chain1) {
+		return chain2
+	}
+	return chain1
 }
 
 func main() {

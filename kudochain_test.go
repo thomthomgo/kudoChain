@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 type hashTestPair struct {
 	block        Block
@@ -54,5 +57,22 @@ func TestCheckBlock(t *testing.T) {
 	if checkBlocks(block1, block3) {
 		t.Error("Block 1 : ", block1.ToString(), "Block 3 : ", block3.ToString(), "are considered valid but should not be")
 	}
+}
 
+func TestChooseLongerChain(t *testing.T) {
+	block1 := Block{1, "", time.Date(2018, time.January, 1, 0, 0, 0, 0, time.UTC).String(), "", "Thomas", ""}
+	block1.computeHash()
+	block2 := newBlock(block1, "Thomas", "Joe")
+	block3 := newBlock(block2, "Joe", "Bill")
+
+	chain1 := [2]Block{block1, block2}
+	chain2 := [3]Block{block1, block2, block3}
+
+	longerChain := chooseLongerChain(chain1[:], chain2[:])
+
+	for i := range chain2 {
+		if chain2[i] != longerChain[i] {
+			t.Error("Chain 2 should be longer than chain 1 : ", len(chain1), " blocks in chain 1 vs ", len(chain2), "in chain 2")
+		}
+	}
 }
