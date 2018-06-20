@@ -4,12 +4,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
 
-//TODO :
+//TODO : write web server
 
 type Block struct {
 	id            int
@@ -53,8 +55,11 @@ func chooseLongerChain(chain1, chain2 []Block) []Block {
 	return chain1
 }
 
+func handler(responseWriter http.ResponseWriter, request *http.Request) {
+	fmt.Fprintf(responseWriter, "Hello world")
+}
 func main() {
-	genesis := Block{1, "", time.Now().String(), "", "Thomas", ""}
-	genesis.computeHash()
-	fmt.Printf(genesis.hash)
+	fmt.Printf("Starting http server on localhost:8080 \n")
+	http.HandleFunc("/", handler)
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
