@@ -5,37 +5,37 @@ import (
 	"time"
 )
 
-type hashTestPair struct {
+type HashTestPair struct {
 	block        Block
 	expectedHash string
 }
 
-var tests = []hashTestPair{
-	{Block{1, "", "timestamp", "", "Thomas", ""}, "df9f931e333586ff29d2e7e1700db2728f06158d0863e6445ca610c8d5f96e30"}}
+var tests = []HashTestPair{
+	{Block{1, "", "Timestamp", "", "Thomas", ""}, "a2af678f097b53af79ffaa59b7d858531e4d0d83f65737e21ca003b28d18a4a6"}}
 
 func TestComputeHash(t *testing.T) {
 	for _, pair := range tests {
 		pair.block.computeHash()
-		if pair.block.hash != pair.expectedHash {
+		if pair.block.Hash != pair.expectedHash {
 			t.Error("For : ", pair.block.ToString(),
 				"\n , expected :", pair.expectedHash,
-				"\n, but was :", pair.block.hash)
+				"\n, but was :", pair.block.Hash)
 		}
 	}
 }
 
 func TestHashUnicity(t *testing.T) {
-	block1 := Block{1, "", "timestamp", "", "Thomas", ""}
-	block2 := Block{1, "", "timestamp", "", "Thomas", ""}
+	block1 := Block{1, "", "Timestamp", "", "Thomas", ""}
+	block2 := Block{1, "", "Timestamp", "", "Thomas", ""}
 	block1.computeHash()
 	block2.computeHash()
-	if block1.hash != block2.hash {
+	if block1.Hash != block2.Hash {
 		t.Error("Block 1 : ", block1.ToString(), "Block 2 : ", block2.ToString(), "Got Different Hashes")
 	}
 }
 
 func TestBlockCreation(t *testing.T) {
-	block1 := Block{1, "", "timestamp", "", "Thomas", ""}
+	block1 := Block{1, "", "Timestamp", "", "Thomas", ""}
 	block2 := newBlock(block1, "Thomas", "Bill")
 
 	if !checkBlocks(block1, block2) {
@@ -44,10 +44,10 @@ func TestBlockCreation(t *testing.T) {
 }
 
 func TestCheckBlock(t *testing.T) {
-	block1 := Block{1, "", "timestamp", "", "Thomas", ""}
+	block1 := Block{1, "", "Timestamp", "", "Thomas", ""}
 	block1.computeHash()
 	block2 := newBlock(block1, "Thomas", "Bill")
-	block3 := Block{3, "", "timestamp2", "", "Joe", ""}
+	block3 := Block{3, "", "Timestamp2", "", "Joe", ""}
 	block3.computeHash()
 
 	if !checkBlocks(block1, block2) {
