@@ -13,7 +13,8 @@ import (
 	"time"
 )
 
-//TODO : deal with known peers list
+//In progress: an user can connect to another
+
 type Block struct {
 	Id            int
 	PreviousHash  string
@@ -101,28 +102,35 @@ func userInput() {
 }
 
 func manageCommand(command string) {
-	switch strings.TrimRight(command, "\n") {
+	commandWithArgs := strings.Split(command, " ")
+	switch strings.TrimRight(commandWithArgs[0], "\n") {
 	case "quit":
 		terminationSignal <- true
+	case "connect":
+		createConnection(strings.TrimRight(commandWithArgs[1], "\n"))
 	default:
 		log.Printf("Unknown command:%v", command)
 	}
 
 }
 
-// func createConnection(address string) net.Conn {
-// 	tcpAddress, err := net.ResolveTCPAddr("tcp", address)
-//
-// 	if err != nil {
-// 		log.Printf("Could not resolve %v", address)
-// 	}
-// 	connection, err := net.DialTCP("tcp", nil, tcpAddress)
-// 	if err != nil {
-// 		log.Printf("%v is unreachable", address)
-// 		return nil
-// 	}
-// 	return connection
-// }
+func createConnection(address string) net.Conn {
+
+	tcpAddress, err := net.ResolveTCPAddr("tcp", address)
+
+	if err != nil {
+		log.Printf("Could not resolve %v", address)
+		//SHOULD HANDLE
+	}
+
+	log.Printf("Trying to connect to %v", tcpAddress.String())
+	connection, err := net.DialTCP("tcp", nil, tcpAddress)
+	if err != nil {
+		log.Printf("%v is unreachable", address)
+		return nil
+	}
+	return connection
+}
 
 func server(port string) {
 	log.Printf("Starting server...")
