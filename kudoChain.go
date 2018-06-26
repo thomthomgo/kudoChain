@@ -13,8 +13,7 @@ import (
 	"time"
 )
 
-//TODO : handle proper termination (closing connection and such)
-
+//TODO : deal with known peers list
 type Block struct {
 	Id            int
 	PreviousHash  string
@@ -58,8 +57,9 @@ func chooseLongerChain(chain1, chain2 []Block) []Block {
 }
 
 var (
-	openConnections map[string]net.Conn = make(map[string]net.Conn)
-	blockChain      []Block             = make([]Block, 0)
+	terminationSignal chan bool           = make(chan bool)
+	openConnections   map[string]net.Conn = make(map[string]net.Conn)
+	blockChain        []Block             = make([]Block, 0)
 )
 
 func main() {
@@ -67,9 +67,7 @@ func main() {
 	//clientPort := os.Args[2]
 	defer closeConnections()
 	go server(serverPort)
-
 	userInput()
-
 }
 
 func userInput() {
@@ -90,20 +88,26 @@ func userInput() {
 	for {
 		select {
 		case input := <-ch:
-			manageCommand(input)
+			go manageCommand(input)
 		case <-time.After(1 * time.Second):
+		case shouldTerminate := <-terminationSignal:
+			if shouldTerminate {
+				log.Printf("Shutting down...")
+				return
+			}
 		}
 
 	}
 }
 
 func manageCommand(command string) {
-	switch command {
+	switch strings.TrimRight(command, "\n") {
 	case "quit":
-		return
+		terminationSignal <- true
 	default:
 		log.Printf("Unknown command:%v", command)
 	}
+
 }
 
 // func createConnection(address string) net.Conn {
@@ -121,7 +125,8 @@ func manageCommand(command string) {
 // }
 
 func server(port string) {
-	log.Printf("Starting server")
+	log.Printf("Starting server...")
+
 	listenTcp, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatal(err)
@@ -137,8 +142,10 @@ func server(port string) {
 }
 
 func handleConnection(connection net.Conn) {
+	connectionAddress := connection.LocalAddr().String()
+	log.Printf("Handling incoming connection from %v", connectionAddress)
 	//Add connection to list
-	openConnections[connection.LocalAddr().String()] = connection
+	openConnections[connectionAddress] = connection
 	//Just some POKing code -> marshal and send block to client
 	block1 := Block{1, "Message", "from", "server", "", ""}
 	jsonMsg, err := json.Marshal(block1)
@@ -147,7 +154,6 @@ func handleConnection(connection net.Conn) {
 	}
 	jsonEncoder := json.NewEncoder(connection)
 	jsonEncoder.Encode(jsonMsg)
-
 }
 
 func closeConnections() {
