@@ -13,7 +13,8 @@ import (
 	"time"
 )
 
-//In progress: an user can connect to another
+//In progress: fix bug local address
+//TODO : handle reception of block
 
 type Block struct {
 	Id            int
@@ -150,7 +151,7 @@ func server(port string) {
 }
 
 func handleConnection(connection net.Conn) {
-	connectionAddress := connection.LocalAddr().String()
+	connectionAddress := connection.RemoteAddr().String()
 	log.Printf("Handling incoming connection from %v", connectionAddress)
 	//Add connection to list
 	openConnections[connectionAddress] = connection
