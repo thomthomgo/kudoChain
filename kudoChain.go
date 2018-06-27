@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-//In progress: fix bug local address
 //TODO : handle reception of block
 
 type Block struct {
@@ -109,6 +108,8 @@ func manageCommand(command string) {
 		terminationSignal <- true
 	case "connect":
 		createConnection(strings.TrimRight(commandWithArgs[1], "\n"))
+	case "listConnections":
+		listConnections()
 	default:
 		log.Printf("Unknown command:%v", command)
 	}
@@ -123,13 +124,14 @@ func createConnection(address string) net.Conn {
 		log.Printf("Could not resolve %v", address)
 		//SHOULD HANDLE
 	}
-
-	log.Printf("Trying to connect to %v", tcpAddress.String())
+	log.Printf("Trying to connect to %v...", tcpAddress.String())
 	connection, err := net.DialTCP("tcp", nil, tcpAddress)
 	if err != nil {
 		log.Printf("%v is unreachable", address)
 		return nil
 	}
+	log.Printf("Managed to connect to %v.", connection.RemoteAddr().String())
+	openConnections[connection.RemoteAddr().String()] = connection
 	return connection
 }
 
@@ -169,6 +171,14 @@ func closeConnections() {
 	for connectionAddress, connection := range openConnections {
 		log.Printf("Closing connection %v", connectionAddress)
 		connection.Close()
+	}
+}
+
+func listConnections() {
+	i := 1
+	for connectionAddress := range openConnections {
+		log.Printf("Connection %v : %v", i, connectionAddress)
+		i++
 	}
 
 }
