@@ -110,6 +110,8 @@ func manageCommand(command string) {
 		createConnection(strings.TrimRight(commandWithArgs[1], "\n"))
 	case "listConnections":
 		listConnections()
+	case "sendBlock":
+		sendBlock()
 	default:
 		log.Printf("Unknown command:%v", command)
 	}
@@ -117,7 +119,6 @@ func manageCommand(command string) {
 }
 
 func createConnection(address string) net.Conn {
-
 	tcpAddress, err := net.ResolveTCPAddr("tcp", address)
 
 	if err != nil {
@@ -132,7 +133,27 @@ func createConnection(address string) net.Conn {
 	}
 	log.Printf("Managed to connect to %v.", connection.RemoteAddr().String())
 	openConnections[connection.RemoteAddr().String()] = connection
+	go readIncomingMessage(connection)
 	return connection
+}
+
+func readIncomingMessage(connection net.Conn) {
+	buf := bufio.NewReader(connection)
+	for {
+		message, err := buf.ReadBytes(10)
+		if err != nil {
+			log.Printf("Lost connection")
+			break
+		}
+		log.Printf("Received message from %v", connection.LocalAddr().String())
+		var block Block
+
+		if err := json.Unmarshal(message, &block); err != nil {
+			log.Printf("Could not unmarshal received bytes to block %v", err)
+			continue
+		}
+		log.Printf("Received block : %v", block)
+	}
 }
 
 func server(port string) {
@@ -152,19 +173,25 @@ func server(port string) {
 	}
 }
 
-func handleConnection(connection net.Conn) {
-	connectionAddress := connection.RemoteAddr().String()
-	log.Printf("Handling incoming connection from %v", connectionAddress)
-	//Add connection to list
-	openConnections[connectionAddress] = connection
-	//Just some POKing code -> marshal and send block to client
+func sendBlock() {
 	block1 := Block{1, "Message", "from", "server", "", ""}
 	jsonMsg, err := json.Marshal(block1)
 	if err != nil {
 		log.Printf("Could not marshal block")
 	}
-	jsonEncoder := json.NewEncoder(connection)
-	jsonEncoder.Encode(jsonMsg)
+	//send block to every connection
+	for connectionAddress, connection := range openConnections {
+		log.Printf("Sending block to : %v...", connectionAddress)
+		jsonEncoder := json.NewEncoder(connection)
+		jsonEncoder.Encode(jsonMsg)
+	}
+}
+
+func handleConnection(connection net.Conn) {
+	connectionAddress := connection.RemoteAddr().String()
+	log.Printf("Handling incoming connection from %v", connectionAddress)
+	//Add connection to list
+	openConnections[connectionAddress] = connection
 }
 
 func closeConnections() {
