@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -61,10 +63,11 @@ var (
 	terminationSignal chan bool           = make(chan bool)
 	openConnections   map[string]net.Conn = make(map[string]net.Conn)
 	blockChain        []Block             = make([]Block, 0)
+	serverPort        string
 )
 
 func main() {
-	serverPort := os.Args[1]
+	serverPort = os.Args[1]
 	//clientPort := os.Args[2]
 	defer closeConnections()
 	go server(serverPort)
@@ -133,8 +136,32 @@ func createConnection(address string) net.Conn {
 	}
 	log.Printf("Managed to connect to %v.", connection.RemoteAddr().String())
 	openConnections[connection.RemoteAddr().String()] = connection
+
+	time.Sleep(2 * time.Second)
+
+	io.WriteString(connection, fmt.Sprintln(serverPort))
+
 	go readIncomingMessage(connection)
 	return connection
+}
+
+func handleConnection(connection net.Conn) {
+	connectionAddress := connection.RemoteAddr().String()
+	log.Printf("Handling incoming connection from %v", connectionAddress)
+
+	bufReader := bufio.NewReader(connection)
+	for {
+		port, err := bufReader.ReadString('\n')
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		port = strings.TrimRight(port, "\n")
+		openConnections[strings.Split(connectionAddress, ":")[0]+":"+port] = connection
+		go readIncomingMessage(connection)
+		return
+	}
+
 }
 
 func readIncomingMessage(connection net.Conn) {
@@ -175,23 +202,12 @@ func server(port string) {
 
 func sendBlock() {
 	block1 := Block{1, "Message", "from", "server", "", ""}
-	jsonMsg, err := json.Marshal(block1)
-	if err != nil {
-		log.Printf("Could not marshal block")
-	}
-	//send block to every connection
+
 	for connectionAddress, connection := range openConnections {
 		log.Printf("Sending block to : %v...", connectionAddress)
 		jsonEncoder := json.NewEncoder(connection)
-		jsonEncoder.Encode(jsonMsg)
+		jsonEncoder.Encode(block1)
 	}
-}
-
-func handleConnection(connection net.Conn) {
-	connectionAddress := connection.RemoteAddr().String()
-	log.Printf("Handling incoming connection from %v", connectionAddress)
-	//Add connection to list
-	openConnections[connectionAddress] = connection
 }
 
 func closeConnections() {
