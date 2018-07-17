@@ -62,16 +62,12 @@ func (manager CommandManager) manageCommand(fullCommand string) {
 	switch command {
 	case "quit":
 		manager.terminationSignal <- true
-	// case "connect":
-	// 	//network.CreateConnection(strings.TrimRight(commandWithArgs[1], "\n"))
-	// case "listConnections":
-	// 	//network.ListConnections()
-	// case "sendBlock":
-	// 	//network.SendBlock()
 	default:
-		log.Printf("Falling in default case command : %v /// args :%v", command, args)
-		manager.commands[command](args)
-		//log.Printf("Unknown command:%v", command)
+		if manager.commands[command] != nil {
+			manager.commands[command](args)
+		} else {
+			log.Printf("Unknown command:%v", command)
+		}
 	}
 
 }
