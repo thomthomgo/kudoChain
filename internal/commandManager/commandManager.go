@@ -23,7 +23,7 @@ func (manager CommandManager) RegisterCommand(name string, function func(args []
 	manager.commands[name] = function
 }
 
-func (manager CommandManager) UserInput() {
+func (manager CommandManager) Start() {
 	ch := make(chan string)
 
 	go func(ch chan string) {
@@ -53,7 +53,6 @@ func (manager CommandManager) UserInput() {
 }
 
 func (manager CommandManager) manageCommand(fullCommand string) {
-
 	fullCommand = strings.TrimRight(fullCommand, "\n")
 	split := strings.Split(fullCommand, " ")
 	command := split[0]
