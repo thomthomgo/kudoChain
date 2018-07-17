@@ -2,6 +2,7 @@ package main
 
 import (
 	"kudoChain/internal/blockchain"
+	"kudoChain/internal/commandManager"
 	"kudoChain/internal/network"
 	"net"
 	"os"
@@ -17,9 +18,15 @@ var (
 
 func main() {
 	serverPort := os.Args[1]
-	node := network.Node{Port: serverPort}
+	node := network.NewNode(serverPort)
 
-	defer node.closeConnections()
-	go network.server(serverPort)
-	commandManager.userInput()
+	defer node.CloseConnections()
+	go node.StartServer()
+
+	commandManager := commandManager.NewCommandManager()
+	commandManager.RegisterCommand("connect", node.CreateConnection)
+	commandManager.RegisterCommand("listConnections", node.ListConnections)
+	commandManager.RegisterCommand("sendBlock", node.SendBlock)
+
+	commandManager.UserInput()
 }

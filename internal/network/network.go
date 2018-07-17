@@ -17,6 +17,11 @@ type Node struct {
 	openConnections map[string]net.Conn
 }
 
+func NewNode(port string) *Node {
+	openConnections := make(map[string]net.Conn)
+	return &Node{port, openConnections}
+}
+
 func (n Node) StartServer() {
 	log.Printf("Starting server...")
 	listenTcp, err := net.Listen("tcp", n.Port)
@@ -33,8 +38,9 @@ func (n Node) StartServer() {
 	}
 }
 
-func (n Node) createConnection(address string) {
+func (n Node) CreateConnection(args []string) {
 
+	address := args[0]
 	tcpAddress, err := net.ResolveTCPAddr("tcp", address)
 
 	if err != nil {
@@ -97,7 +103,7 @@ func readIncomingMessage(connection net.Conn) {
 	}
 }
 
-func (n Node) SendBlock() {
+func (n Node) SendBlock(args []string) {
 	block := blockchain.Block{1, "Message", "from", "server", "", ""}
 	for connectionAddress, connection := range n.openConnections {
 		log.Printf("Sending block to : %v...", connectionAddress)
@@ -113,7 +119,7 @@ func (n Node) CloseConnections() {
 	}
 }
 
-func (n Node) ListConnections() {
+func (n Node) ListConnections(args []string) {
 	i := 1
 	for connectionAddress := range n.openConnections {
 		log.Printf("Connection %v : %v", i, connectionAddress)

@@ -2,14 +2,28 @@ package commandManager
 
 import (
 	"bufio"
-	"kudoChain/internal/network"
 	"log"
 	"os"
 	"strings"
 	"time"
 )
 
-func UserInput() {
+type CommandManager struct {
+	commands          map[string]func(args []string)
+	terminationSignal chan bool
+}
+
+func NewCommandManager() *CommandManager {
+	commands := make(map[string]func(args []string))
+	terminationSignal := make(chan bool)
+	return &CommandManager{commands, terminationSignal}
+}
+
+func (manager CommandManager) RegisterCommand(name string, function func(args []string)) {
+	manager.commands[name] = function
+}
+
+func (manager CommandManager) UserInput() {
 	ch := make(chan string)
 
 	go func(ch chan string) {
@@ -27,9 +41,9 @@ func UserInput() {
 	for {
 		select {
 		case input := <-ch:
-			go manageCommand(input)
+			go manager.manageCommand(input)
 		case <-time.After(1 * time.Second):
-		case shouldTerminate := <-terminationSignal:
+		case shouldTerminate := <-manager.terminationSignal:
 			if shouldTerminate {
 				log.Printf("Shutting down...")
 				return
@@ -38,19 +52,26 @@ func UserInput() {
 	}
 }
 
-func manageCommand(command string) {
-	commandWithArgs := strings.Split(command, " ")
-	switch strings.TrimRight(commandWithArgs[0], "\n") {
+func (manager CommandManager) manageCommand(fullCommand string) {
+
+	fullCommand = strings.TrimRight(fullCommand, "\n")
+	split := strings.Split(fullCommand, " ")
+	command := split[0]
+	args := split[1:]
+
+	switch command {
 	case "quit":
-		terminationSignal <- true
-	case "connect":
-		network.CreateConnection(strings.TrimRight(commandWithArgs[1], "\n"))
-	case "listConnections":
-		network.ListConnections()
-	case "sendBlock":
-		network.SendBlock()
+		manager.terminationSignal <- true
+	// case "connect":
+	// 	//network.CreateConnection(strings.TrimRight(commandWithArgs[1], "\n"))
+	// case "listConnections":
+	// 	//network.ListConnections()
+	// case "sendBlock":
+	// 	//network.SendBlock()
 	default:
-		log.Printf("Unknown command:%v", command)
+		log.Printf("Falling in default case command : %v /// args :%v", command, args)
+		manager.commands[command](args)
+		//log.Printf("Unknown command:%v", command)
 	}
 
 }
