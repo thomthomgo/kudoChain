@@ -28,5 +28,5 @@ func main() {
 	commandManager.RegisterCommand("listConnections", node.ListConnections)
 	commandManager.RegisterCommand("sendBlock", node.SendBlock)
 
-	commandManager.UserInput()
+	commandManager.Start()
 }
