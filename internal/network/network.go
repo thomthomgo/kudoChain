@@ -104,7 +104,7 @@ func readIncomingMessage(connection net.Conn) {
 }
 
 func (n Node) SendBlock(args []string) {
-	block := blockchain.Block{1, "Message", "from", "server", "", ""}
+	block := blockchain.Block{1, "Message", "from", "server", "", "", nil}
 	for connectionAddress, connection := range n.openConnections {
 		log.Printf("Sending block to : %v...", connectionAddress)
 		jsonEncoder := json.NewEncoder(connection)
