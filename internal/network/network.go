@@ -3,6 +3,7 @@ package network
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"kudoChain/internal/blockchain"
@@ -15,11 +16,12 @@ import (
 type Node struct {
 	Port            string
 	openConnections map[string]net.Conn
+	chain           *blockchain.Block
 }
 
-func NewNode(port string) *Node {
+func NewNode(port string, chain *blockchain.Block) *Node {
 	openConnections := make(map[string]net.Conn)
-	return &Node{port, openConnections}
+	return &Node{port, openConnections, chain}
 }
 
 func (n Node) StartServer() {
@@ -62,7 +64,7 @@ func (n Node) CreateConnection(args []string) {
 
 	io.WriteString(connection, fmt.Sprintln(n.Port))
 
-	go readIncomingMessage(connection)
+	go n.receiveMessage(connection)
 }
 
 func (n Node) handleConnection(connection net.Conn) {
@@ -78,13 +80,13 @@ func (n Node) handleConnection(connection net.Conn) {
 		}
 		port = strings.TrimRight(port, "\n")
 		n.openConnections[strings.Split(connectionAddress, ":")[0]+":"+port] = connection
-		go readIncomingMessage(connection)
+		go n.receiveMessage(connection)
 		return
 	}
 
 }
 
-func readIncomingMessage(connection net.Conn) {
+func (n Node) receiveMessage(connection net.Conn) {
 	buf := bufio.NewReader(connection)
 	for {
 		message, err := buf.ReadBytes(10)
@@ -93,22 +95,30 @@ func readIncomingMessage(connection net.Conn) {
 			break
 		}
 		log.Printf("Received message from %v", connection.LocalAddr().String())
-		var block blockchain.Block
-
-		if err := json.Unmarshal(message, &block); err != nil {
-			log.Printf("Could not unmarshal received bytes to block %v", err)
+		receivedChain, err := receiveChain(message)
+		if err != nil {
+			log.Printf("%v", err)
 			continue
 		}
-		log.Printf("Received block : %v", block)
+		log.Printf("Received message is of type Block")
+		*n.chain = receivedChain // should check longer chain
+		n.chain.Print([]string{})
 	}
 }
 
+func receiveChain(message []byte) (blockchain.Block, error) {
+	var receivedChain blockchain.Block
+	if err := json.Unmarshal(message, &receivedChain); err != nil {
+		return receivedChain, errors.New("Received message is not of type Block")
+	}
+	return receivedChain, nil
+}
+
 func (n Node) SendBlock(args []string) {
-	block := blockchain.Block{1, "Message", "from", "server", "", "", nil}
 	for connectionAddress, connection := range n.openConnections {
 		log.Printf("Sending block to : %v...", connectionAddress)
 		jsonEncoder := json.NewEncoder(connection)
-		jsonEncoder.Encode(block)
+		jsonEncoder.Encode(n.chain)
 	}
 }
 

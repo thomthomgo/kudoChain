@@ -20,7 +20,7 @@ func main() {
 	chain.ComputeHash()
 
 	serverPort := os.Args[1]
-	node := network.NewNode(serverPort)
+	node := network.NewNode(serverPort, &chain)
 
 	defer node.CloseConnections()
 	go node.StartServer()

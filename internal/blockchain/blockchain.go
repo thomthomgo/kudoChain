@@ -62,7 +62,6 @@ func ChooseLongerChain(chain1, chain2 []Block) []Block {
 }
 
 func (chain *Block) Print(args []string) {
-	log.Printf("%v", chain)
 	json, err := json.MarshalIndent(&chain, "", "		")
 	if err != nil {
 		log.Printf("Could not marshal chain : %v", err)
