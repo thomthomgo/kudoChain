@@ -9,17 +9,17 @@ import (
 )
 
 type CommandManager struct {
-	commands          map[string]func(args []string)
+	commands          map[string]func(args []string) error
 	terminationSignal chan bool
 }
 
 func NewCommandManager() *CommandManager {
-	commands := make(map[string]func(args []string))
+	commands := make(map[string]func(args []string) error)
 	terminationSignal := make(chan bool)
 	return &CommandManager{commands, terminationSignal}
 }
 
-func (manager CommandManager) RegisterCommand(name string, function func(args []string)) {
+func (manager CommandManager) RegisterCommand(name string, function func(args []string) error) {
 	manager.commands[name] = function
 }
 
@@ -63,7 +63,10 @@ func (manager CommandManager) manageCommand(fullCommand string) {
 		manager.terminationSignal <- true
 	default:
 		if manager.commands[command] != nil {
-			manager.commands[command](args)
+			err := manager.commands[command](args)
+			if err != nil {
+				log.Printf("Error while executing %v : %v ", command, err)
+			}
 		} else {
 			log.Printf("Unknown command:%v", command)
 		}

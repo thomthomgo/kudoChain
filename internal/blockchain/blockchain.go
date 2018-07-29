@@ -26,12 +26,13 @@ func NewBlock(previousBlock Block, PreviousOwner, NewOwner string) Block {
 	return newBlock
 }
 
-func (chain *Block) AddBlock(args []string) {
+func (chain *Block) AddBlock(args []string) error {
 	//Should add checks to ensure owner can share kudo
 	previousOwner := args[0]
 	newOwner := args[1]
 	newBlock := NewBlock(*chain, previousOwner, newOwner)
 	*chain = newBlock
+	return nil
 }
 
 func (block Block) ToString() string {
@@ -61,11 +62,11 @@ func ChooseLongerChain(chain1, chain2 []Block) []Block {
 	return chain1
 }
 
-func (chain *Block) Print(args []string) {
+func (chain *Block) Print(args []string) error {
 	json, err := json.MarshalIndent(&chain, "", "		")
 	if err != nil {
-		log.Printf("Could not marshal chain : %v", err)
-		return
+		return err
 	}
 	log.Printf("%s", json)
+	return nil
 }

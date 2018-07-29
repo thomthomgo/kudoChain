@@ -25,12 +25,13 @@ func NewNode(port string, chain *blockchain.Block) *Node {
 }
 
 func (n Node) StartServer() {
-	log.Printf("Starting server...")
+	log.Printf("Starting local node on port %v...", n.Port)
 	listenTcp, err := net.Listen("tcp", n.Port)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer listenTcp.Close()
+	log.Printf("Local node successfully started. Listening connections.")
 	for {
 		connection, err := listenTcp.Accept()
 		if err != nil {
@@ -40,13 +41,13 @@ func (n Node) StartServer() {
 	}
 }
 
-func (n Node) CreateConnection(args []string) {
-
+func (n Node) CreateConnection(args []string) error {
 	address := args[0]
 	tcpAddress, err := net.ResolveTCPAddr("tcp", address)
 
 	if err != nil {
 		log.Printf("Could not resolve %v", address)
+		return err
 	}
 
 	log.Printf("Trying to connect to %v...", tcpAddress.String())
@@ -55,16 +56,18 @@ func (n Node) CreateConnection(args []string) {
 
 	if err != nil {
 		log.Printf("%v is unreachable", address)
+		return err
 	}
+	n.openConnections[connection.RemoteAddr().String()] = connection
 
 	log.Printf("Managed to connect to %v.", connection.RemoteAddr().String())
-	n.openConnections[connection.RemoteAddr().String()] = connection
 
 	time.Sleep(2 * time.Second)
 
 	io.WriteString(connection, fmt.Sprintln(n.Port))
 
 	go n.receiveMessage(connection)
+	return nil
 }
 
 func (n Node) handleConnection(connection net.Conn) {
@@ -114,12 +117,16 @@ func receiveChain(message []byte) (blockchain.Block, error) {
 	return receivedChain, nil
 }
 
-func (n Node) SendBlock(args []string) {
+func (n Node) SendBlock(args []string) error {
 	for connectionAddress, connection := range n.openConnections {
-		log.Printf("Sending block to : %v...", connectionAddress)
 		jsonEncoder := json.NewEncoder(connection)
-		jsonEncoder.Encode(n.chain)
+		err := jsonEncoder.Encode(n.chain)
+		if err != nil {
+			return err
+		}
+		log.Printf("Sent block to : %v.", connectionAddress)
 	}
+	return nil
 }
 
 func (n Node) CloseConnections() {
@@ -129,11 +136,11 @@ func (n Node) CloseConnections() {
 	}
 }
 
-func (n Node) ListConnections(args []string) {
+func (n Node) ListConnections(args []string) error {
 	i := 1
 	for connectionAddress := range n.openConnections {
 		log.Printf("Connection %v : %v", i, connectionAddress)
 		i++
 	}
-
+	return nil
 }

@@ -16,6 +16,7 @@ var (
 )
 
 func main() {
+
 	chain := blockchain.Block{1, "", time.Now().Format("2006-01-02 15:04:05"), "", "Thomas", "", nil}
 	chain.ComputeHash()
 
